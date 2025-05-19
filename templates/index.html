@@ -1,0 +1,194 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Strength Checker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container py-4">
+        <header class="mb-4 text-center">
+            <h1>Brute Force Attack Demonstration</h1>
+            <p class="lead">Learn how easily weak passwords can be cracked</p>
+        </header>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="card-title mb-0">Password Cracker</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="brute-force-form">
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Enter a password to crack:</label>
+                                <input type="text" class="form-control" id="password" placeholder="Simple password" maxlength="8" required>
+                                <div class="form-text">For demonstration purposes, use a simple password (max 8 characters)</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="max-length" class="form-label">Maximum password length to try:</label>
+                                <input type="number" class="form-control" id="max-length" min="1" max="8" value="4">
+                                <div class="form-text">Higher values will take exponentially longer</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Character sets to use:</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="use-digits" checked>
+                                    <label class="form-check-label" for="use-digits">
+                                        Digits (0-9)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="use-lowercase" checked>
+                                    <label class="form-check-label" for="use-lowercase">
+                                        Lowercase letters (a-z)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="use-uppercase">
+                                    <label class="form-check-label" for="use-uppercase">
+                                        Uppercase letters (A-Z)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="use-special">
+                                    <label class="form-check-label" for="use-special">
+                                        Special characters (!@#$...)
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="hash-type" class="form-label">Hash type:</label>
+                                <select class="form-select" id="hash-type">
+                                    <option value="plain">Plain text (for demonstration)</option>
+                                    <option value="md5">MD5</option>
+                                    <option value="sha1">SHA-1</option>
+                                    <option value="sha256">SHA-256</option>
+                                </select>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary" id="start-button">Start Cracking</button>
+                                <button type="button" class="btn btn-danger d-none" id="stop-button">Stop</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h3 class="card-title mb-0">Results</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="progress-container" class="d-none">
+                            <div class="mb-3">
+                                <label class="form-label">Progress:</label>
+                                <div class="progress">
+                                    <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Status:</label>
+                                <div id="status" class="alert alert-info">Waiting to start...</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Stats:</label>
+                                <ul class="list-group">
+                                    <li class="list-group-item">Attempts: <span id="attempts">0</span></li>
+                                    <li class="list-group-item">Elapsed time: <span id="elapsed">0</span> seconds</li>
+                                    <li class="list-group-item">Current attempt: <span id="current-attempt">-</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div id="result-container" class="d-none">
+                            <div class="alert alert-success">
+                                <h4 class="alert-heading">Password cracked!</h4>
+                                <p>The password is: <strong id="cracked-password"></strong></p>
+                                <hr>
+                                <p class="mb-0">It took <span id="total-attempts"></span> attempts and <span id="total-time"></span> seconds.</p>
+                                <p class="mb-0">That's <span id="attempts-per-second"></span> attempts per second.</p>
+                            </div>
+                        </div>
+                        
+                        <div id="failed-container" class="d-none">
+                            <div class="alert alert-warning">
+                                <h4 class="alert-heading">Cracking failed</h4>
+                                <p id="failed-message"></p>
+                                <hr>
+                                <p class="mb-0">Try setting a higher maximum length or different character sets.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h3 class="card-title mb-0">Password Security Tips</h3>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group">
+                            <li class="list-group-item">
+                                <strong>Use longer passwords</strong> - Each additional character exponentially increases cracking time
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Mix character types</strong> - Combine uppercase, lowercase, numbers, and special characters
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Avoid patterns</strong> - Don't use keyboard patterns (qwerty) or sequential numbers
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Use unique passwords</strong> - Different sites should have different passwords
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Consider a password manager</strong> - Generate and store strong, unique passwords
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h3 class="card-title mb-0">How Brute Force Attacks Work</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>A brute force attack is one of the simplest methods to crack passwords:</p>
+                        <ol>
+                            <li>The attacker tries every possible combination of characters</li>
+                            <li>Starting with shorter combinations and increasing length</li>
+                            <li>For each attempt, the generated password is compared to the target</li>
+                            <li>This continues until a match is found or all possibilities are exhausted</li>
+                        </ol>
+                        
+                        <p><strong>Security Impact:</strong></p>
+                        <ul>
+                            <li>Short passwords with limited character sets can be cracked in seconds</li>
+                            <li>Each additional character or character type multiplies the possible combinations</li>
+                            <li>Modern systems use password hashing and rate limiting to slow down these attacks</li>
+                            <li>Password complexity requirements exist specifically to defeat brute force attacks</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
